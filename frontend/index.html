@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📦 Manajemen Inventory</title>
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Manajemen Inventory</h1>
+        <p class="subtitle">Kelola stok barang dengan mudah</p>
+
+        <!-- Alert -->
+        <div id="alertMessage" class="alert"></div>
+
+        <!-- Statistik -->
+        <div class="stats">
+            <div class="stat-box">
+                <h3>Total Barang</h3>
+                <div class="value blue" id="totalItems">0</div>
+            </div>
+            <div class="stat-box">
+                <h3>Total Stok</h3>
+                <div class="value" id="totalStock">0</div>
+            </div>
+            <div class="stat-box">
+                <h3>Total Nilai</h3>
+                <div class="value green" id="totalValue">Rp 0</div>
+            </div>
+        </div>
+
+        <!-- Form Tambah/Edit -->
+        <div class="form-section">
+            <h2 id="formTitle">➕ Tambah Barang</h2>
+            <div class="form-group">
+                <input type="text" id="nameInput" placeholder="Nama barang..." />
+                <input type="number" id="stockInput" placeholder="Jumlah stok..." />
+                <input type="number" id="priceInput" placeholder="Harga satuan..." />
+                <input type="hidden" id="editId" />
+                <button id="saveBtn">Simpan</button>
+                <button id="cancelBtn" class="cancel" style="display:none;">Batal</button>
+            </div>
+        </div>
+
+        <!-- Tabel Data -->
+        <div id="loading" class="loading">⏳ Memuat data...</div>
+        <div class="table-wrapper">
+            <table id="dataTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama Barang</th>
+                        <th>Stok</th>
+                        <th>Harga</th>
+                        <th>Subtotal</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="dataBody"></tbody>
+                <tfoot id="dataFoot"></tfoot>
+            </table>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
