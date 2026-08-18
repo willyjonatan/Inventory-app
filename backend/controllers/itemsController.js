@@ -16,20 +16,55 @@ exports.getAllItems = async (req, res) => {
     }
 };
 
+// GET - Search items
+exports.searchItems = async (req, res) => {
+    try {
+        const { keyword } = req.query;
+        
+        if (!keyword) {
+            return res.status(400).json({ error: 'Keyword is required' });
+        }
+        
+        const snapshot = await collection.get();
+        const items = [];
+        const searchTerm = keyword.toLowerCase();
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.name && data.name.toLowerCase().includes(searchTerm)) {
+                items.push({ id: doc.id, ...data });
+            }
+        });
+        
+        res.json(items);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // POST - Tambah data baru
 exports.createItem = async (req, res) => {
     try {
         const { name, stock, price } = req.body;
         
         if (!name) {
-            return res.status(400).json({ error: 'Nama barang wajib diisi!' });
+            return res.status(400).json({ error: 'Nama barang wajib diisi' });
+        }
+        
+        if (stock && stock < 0) {
+            return res.status(400).json({ error: 'Stok tidak boleh negatif' });
+        }
+        
+        if (price && price < 0) {
+            return res.status(400).json({ error: 'Harga tidak boleh negatif' });
         }
 
         const data = {
             name,
             stock: stock || 0,
             price: price || 0,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            createdBy: req.user ? req.user.email : 'system'
         };
 
         const docRef = await collection.add(data);
@@ -47,14 +82,23 @@ exports.updateItem = async (req, res) => {
         const { name, stock, price } = req.body;
 
         if (!name) {
-            return res.status(400).json({ error: 'Nama barang wajib diisi!' });
+            return res.status(400).json({ error: 'Nama barang wajib diisi' });
+        }
+        
+        if (stock && stock < 0) {
+            return res.status(400).json({ error: 'Stok tidak boleh negatif' });
+        }
+        
+        if (price && price < 0) {
+            return res.status(400).json({ error: 'Harga tidak boleh negatif' });
         }
 
         const data = {
             name,
             stock: stock || 0,
             price: price || 0,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
+            updatedBy: req.user ? req.user.email : 'system'
         };
 
         await collection.doc(id).update(data);

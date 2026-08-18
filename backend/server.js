@@ -10,7 +10,10 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+const authRoutes = require('./routes/auth');
 const itemsRoutes = require('./routes/items');
+
+app.use('/api/auth', authRoutes);
 app.use('/api/items', itemsRoutes);
 
 // Health check
@@ -24,7 +27,7 @@ app.get('/api/health', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
-    console.log(`📦 Inventory Management System API`);
-    console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
+    console.log('Server running on http://localhost:' + PORT);
+    console.log('Inventory Management System API');
+    console.log('Health check: http://localhost:' + PORT + '/api/health');
 });

@@ -1,5 +1,6 @@
 const API_URL = 'http://localhost:3000/api/items';
 let items = [];
+let searchKeyword = '';
 
 // DOM Elements
 const nameInput = document.getElementById('nameInput');
@@ -16,30 +17,49 @@ const dataTable = document.getElementById('dataTable');
 const totalItems = document.getElementById('totalItems');
 const totalStock = document.getElementById('totalStock');
 const totalValue = document.getElementById('totalValue');
-const alertMessage = document.getElementById('alertMessage');
+const searchInput = document.getElementById('searchInput');
 
-// Fetch semua data
+// Get token
+function getToken() {
+    return localStorage.getItem('token');
+}
+
+// Fetch all data
 async function fetchItems() {
     try {
         showLoading(true);
-        const res = await fetch(API_URL);
+        const url = searchKeyword ? `${API_URL}/search?keyword=${encodeURIComponent(searchKeyword)}` : API_URL;
+        const response = await fetch(url);
         
-        if (!res.ok) {
-            throw new Error('Gagal memuat data');
+        if (!response.ok) {
+            throw new Error('Failed to load data');
         }
         
-        items = await res.json();
+        items = await response.json();
         renderTable();
         updateStats();
         showLoading(false);
     } catch (error) {
         console.error('Error fetching:', error);
-        showAlert('Gagal memuat data!', 'error');
+        showAlert('Failed to load data!', 'error');
         showLoading(false);
     }
 }
 
-// Update statistik
+// Search items
+function searchItems() {
+    searchKeyword = searchInput.value.trim();
+    fetchItems();
+}
+
+// Clear search
+function clearSearch() {
+    searchInput.value = '';
+    searchKeyword = '';
+    fetchItems();
+}
+
+// Update stats
 function updateStats() {
     const total = items.length;
     const stock = items.reduce((sum, item) => sum + (item.stock || 0), 0);
@@ -50,10 +70,10 @@ function updateStats() {
     totalValue.textContent = `Rp ${value.toLocaleString('id-ID')}`;
 }
 
-// Render tabel
+// Render table
 function renderTable() {
     if (items.length === 0) {
-        dataBody.innerHTML = `<tr><td colspan="6" class="empty">📭 Belum ada data barang</td></tr>`;
+        dataBody.innerHTML = `<tr><td colspan="6" class="empty">No items found</td></tr>`;
         dataFoot.innerHTML = '';
         dataTable.style.display = 'table';
         return;
@@ -67,19 +87,19 @@ function renderTable() {
             <td>Rp ${(item.price || 0).toLocaleString('id-ID')}</td>
             <td>Rp ${((item.stock || 0) * (item.price || 0)).toLocaleString('id-ID')}</td>
             <td>
-                <button class="btn-edit" onclick="editItem('${item.id}')">✏️ Edit</button>
-                <button class="btn-delete" onclick="deleteItem('${item.id}')">🗑️ Hapus</button>
+                <button class="btn-edit" onclick="editItem('${item.id}')">Edit</button>
+                <button class="btn-delete" onclick="deleteItem('${item.id}')">Delete</button>
             </td>
         </tr>
     `).join('');
 
-    // Footer total
+    // Footer
     const totalStockAll = items.reduce((sum, item) => sum + (item.stock || 0), 0);
     const totalValueAll = items.reduce((sum, item) => sum + ((item.stock || 0) * (item.price || 0)), 0);
 
     dataFoot.innerHTML = `
         <tr class="total-row">
-            <td colspan="2">📊 TOTAL</td>
+            <td colspan="2">TOTAL</td>
             <td>${totalStockAll}</td>
             <td></td>
             <td>Rp ${totalValueAll.toLocaleString('id-ID')}</td>
@@ -90,40 +110,49 @@ function renderTable() {
     dataTable.style.display = 'table';
 }
 
-// Tambah data
+// Add item
 async function addItem() {
     const name = nameInput.value.trim();
     const stock = parseInt(stockInput.value) || 0;
     const price = parseInt(priceInput.value) || 0;
 
     if (!name) {
-        showAlert('Nama barang wajib diisi!', 'error');
+        showAlert('Product name is required!', 'error');
         nameInput.focus();
         return;
     }
 
+    const token = getToken();
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
+
     try {
-        const res = await fetch(API_URL, {
+        const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ name, stock, price })
         });
 
-        if (res.ok) {
+        if (response.ok) {
             clearForm();
             await fetchItems();
-            showAlert('Data berhasil ditambahkan!', 'success');
+            showAlert('Item added successfully!', 'success');
         } else {
-            const error = await res.json();
-            showAlert(error.error || 'Gagal menambah data!', 'error');
+            const error = await response.json();
+            showAlert(error.error || 'Failed to add item!', 'error');
         }
     } catch (error) {
         console.error('Error adding:', error);
-        showAlert('Terjadi kesalahan!', 'error');
+        showAlert('An error occurred!', 'error');
     }
 }
 
-// Edit data
+// Edit item
 function editItem(id) {
     const item = items.find(i => i.id === id);
     if (!item) return;
@@ -134,11 +163,11 @@ function editItem(id) {
     editId.value = id;
     saveBtn.textContent = 'Update';
     cancelBtn.style.display = 'inline-block';
-    formTitle.textContent = '✏️ Edit Barang';
+    formTitle.textContent = 'Edit Item';
     nameInput.focus();
 }
 
-// Update data
+// Update item
 async function updateItem() {
     const id = editId.value;
     const name = nameInput.value.trim();
@@ -146,51 +175,69 @@ async function updateItem() {
     const price = parseInt(priceInput.value) || 0;
 
     if (!name) {
-        showAlert('Nama barang wajib diisi!', 'error');
+        showAlert('Product name is required!', 'error');
         nameInput.focus();
         return;
     }
 
+    const token = getToken();
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
+
     try {
-        const res = await fetch(`${API_URL}/${id}`, {
+        const response = await fetch(`${API_URL}/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ name, stock, price })
         });
 
-        if (res.ok) {
+        if (response.ok) {
             clearForm();
             await fetchItems();
-            showAlert('Data berhasil diupdate!', 'success');
+            showAlert('Item updated successfully!', 'success');
         } else {
-            const error = await res.json();
-            showAlert(error.error || 'Gagal update data!', 'error');
+            const error = await response.json();
+            showAlert(error.error || 'Failed to update item!', 'error');
         }
     } catch (error) {
         console.error('Error updating:', error);
-        showAlert('Terjadi kesalahan!', 'error');
+        showAlert('An error occurred!', 'error');
     }
 }
 
-// Hapus data
+// Delete item
 async function deleteItem(id) {
-    if (!confirm('Yakin ingin menghapus barang ini?')) return;
+    if (!confirm('Are you sure you want to delete this item?')) return;
+
+    const token = getToken();
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
 
     try {
-        const res = await fetch(`${API_URL}/${id}`, {
-            method: 'DELETE'
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
         });
 
-        if (res.ok) {
+        if (response.ok) {
             await fetchItems();
-            showAlert('Data berhasil dihapus!', 'success');
+            showAlert('Item deleted successfully!', 'success');
         } else {
-            const error = await res.json();
-            showAlert(error.error || 'Gagal menghapus data!', 'error');
+            const error = await response.json();
+            showAlert(error.error || 'Failed to delete item!', 'error');
         }
     } catch (error) {
         console.error('Error deleting:', error);
-        showAlert('Terjadi kesalahan!', 'error');
+        showAlert('An error occurred!', 'error');
     }
 }
 
@@ -200,10 +247,9 @@ function clearForm() {
     stockInput.value = '';
     priceInput.value = '';
     editId.value = '';
-    saveBtn.textContent = 'Simpan';
+    saveBtn.textContent = 'Save';
     cancelBtn.style.display = 'none';
-    formTitle.textContent = '➕ Tambah Barang';
-    hideAlert();
+    formTitle.textContent = 'Add New Item';
 }
 
 // Cancel edit
@@ -219,17 +265,16 @@ function showLoading(show) {
 
 // Show alert
 function showAlert(message, type = 'success') {
-    alertMessage.textContent = message;
-    alertMessage.className = `alert ${type}`;
-    alertMessage.style.display = 'block';
-    
-    setTimeout(() => {
-        hideAlert();
-    }, 5000);
-}
-
-function hideAlert() {
-    alertMessage.style.display = 'none';
+    const alertEl = document.getElementById('alertMessage');
+    if (alertEl) {
+        alertEl.textContent = message;
+        alertEl.className = `alert ${type}`;
+        alertEl.style.display = 'block';
+        
+        setTimeout(() => {
+            alertEl.style.display = 'none';
+        }, 5000);
+    }
 }
 
 // Event listeners
@@ -244,6 +289,12 @@ saveBtn.addEventListener('click', () => {
 cancelBtn.addEventListener('click', cancelEdit);
 
 // Enter key support
+searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        searchItems();
+    }
+});
+
 nameInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         stockInput.focus();
@@ -262,7 +313,20 @@ priceInput.addEventListener('keypress', (e) => {
     }
 });
 
-// Load data saat halaman dimuat
+// Load data
 document.addEventListener('DOMContentLoaded', () => {
+    // Check authentication
+    if (!localStorage.getItem('token')) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    // Set user info
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.name) {
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+    }
+    
     fetchItems();
 });
