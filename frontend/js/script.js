@@ -168,7 +168,7 @@ async function addItem() {
 }
 
 // ============================================
-// EDIT ITEM
+// EDIT, UPDATE, DELETE
 // ============================================
 function editItem(id) {
     const item = items.find(i => i.id === id);
@@ -184,9 +184,6 @@ function editItem(id) {
     nameInput.focus();
 }
 
-// ============================================
-// UPDATE ITEM
-// ============================================
 async function updateItem() {
     const id = editId.value;
     const name = nameInput.value.trim();
@@ -237,9 +234,6 @@ async function updateItem() {
     }
 }
 
-// ============================================
-// DELETE ITEM
-// ============================================
 async function deleteItem(id) {
     if (!confirm('Yakin ingin menghapus barang ini?')) return;
 

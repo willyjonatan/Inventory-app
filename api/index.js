@@ -199,10 +199,9 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // ============================================
-// ITEMS CRUD - DENGAN FILTER USER
+// ITEMS CRUD
 // ============================================
 
-// GET - Ambil data
 app.get('/api/items', authenticate, async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -228,7 +227,6 @@ app.get('/api/items', authenticate, async (req, res) => {
     }
 });
 
-// SEARCH
 app.get('/api/items/search', authenticate, async (req, res) => {
     try {
         const { keyword } = req.query;
@@ -264,7 +262,6 @@ app.get('/api/items/search', authenticate, async (req, res) => {
     }
 });
 
-// POST - Tambah data
 app.post('/api/items', authenticate, async (req, res) => {
     try {
         const { name, stock, price } = req.body;
@@ -290,7 +287,6 @@ app.post('/api/items', authenticate, async (req, res) => {
     }
 });
 
-// PUT - Update data
 app.put('/api/items/:id', authenticate, async (req, res) => {
     try {
         const { id } = req.params;
@@ -330,7 +326,6 @@ app.put('/api/items/:id', authenticate, async (req, res) => {
     }
 });
 
-// DELETE - Hapus data
 app.delete('/api/items/:id', authenticate, async (req, res) => {
     try {
         const { id } = req.params;

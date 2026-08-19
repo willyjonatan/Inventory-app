@@ -106,7 +106,7 @@ if (loginForm) {
 }
 
 // ============================================
-// TAMPILKAN USER DI NAVBAR
+// TAMPILKAN USER
 // ============================================
 function displayUser() {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -135,7 +135,7 @@ if (window.location.pathname.includes('index.html')) {
 }
 
 // ============================================
-// SHOW PROFILE
+// SHOW PROFILE & LOGOUT
 // ============================================
 function showProfile() {
     const dropdown = document.getElementById('profileDropdown');
@@ -144,9 +144,6 @@ function showProfile() {
     }
 }
 
-// ============================================
-// LOGOUT
-// ============================================
 function logout() {
     if (confirm('Yakin ingin logout?')) {
         localStorage.removeItem('token');
