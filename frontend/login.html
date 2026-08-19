@@ -5,32 +5,193 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login - Inventory Management</title>
     <link rel="stylesheet" href="css/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+        .auth-page {
+            align-items: center;
+            min-height: 100vh;
+        }
+        .auth-card {
+            max-width: 420px;
+            padding: 32px 36px;
+            margin: 20px;
+        }
+        .auth-card .logo {
+            margin-bottom: 28px;
+        }
+        .auth-card .logo .user-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 32px;
+        }
+        .auth-card .logo .user-icon svg {
+            width: 36px;
+            height: 36px;
+            stroke: white;
+        }
+        .auth-card .logo h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        .auth-card .logo p {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-top: 2px;
+        }
+        .form-group {
+            margin-bottom: 16px !important;
+        }
+        .form-group label {
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            margin-bottom: 4px !important;
+        }
+        .form-group input {
+            padding: 10px 14px !important;
+            font-size: 14px !important;
+            border-radius: 8px !important;
+        }
+        .btn-primary {
+            padding: 12px !important;
+            font-size: 15px !important;
+            margin-top: 4px !important;
+        }
+        .auth-link {
+            margin-top: 16px !important;
+            font-size: 13px !important;
+        }
+        .auth-link a {
+            font-weight: 600;
+        }
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-wrapper input {
+            flex: 1;
+            padding-right: 44px !important;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--gray-400);
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+        .toggle-password:hover {
+            color: var(--gray-600);
+        }
+        .error-message {
+            display: none;
+            font-size: 12px;
+            color: #ef4444;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body class="auth-page">
     <div class="auth-card">
         <div class="logo">
-            <h1>Inventory Management</h1>
-            <p>Sign in to your account</p>
+            <div class="user-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
+            <h1>Welcome Back</h1>
+            <p>Sign in to continue</p>
         </div>
         
-        <div id="alertMessage" class="alert"></div>
-        
-        <form id="loginForm">
+        <form id="loginForm" novalidate>
+            <!-- Email -->
             <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" placeholder="you@example.com" required />
+                <label>Email</label>
+                <input type="email" id="email" placeholder="you@example.com" autocomplete="off" />
+                <div class="error-message" id="emailError"></div>
             </div>
+            
+            <!-- Password -->
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Enter your password" required />
+                <label>Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" placeholder="Enter your password" />
+                    <button type="button" class="toggle-password" onclick="togglePassword('password')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+                <div class="error-message" id="passwordError"></div>
             </div>
-            <button type="submit" class="btn-primary">Sign In</button>
+            
+            <button type="submit" class="btn-primary" id="loginBtn">Sign In</button>
         </form>
         
         <div class="auth-link">
-            Don't have an account? <a href="register.html">Create one</a>
+            Don't have account? <a href="register.html">Create one</a>
         </div>
     </div>
+    
+    <script>
+        // ============================================
+        // TOGGLE PASSWORD
+        // ============================================
+        function togglePassword(id) {
+            const input = document.getElementById(id);
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+        
+        // ============================================
+        // REAL-TIME VALIDATION LOGIN
+        // ============================================
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const emailError = document.getElementById('emailError');
+        const passwordError = document.getElementById('passwordError');
+        
+        emailInput.addEventListener('input', function() {
+            const value = this.value.trim();
+            if (value.length > 0 && !value.includes('@')) {
+                emailError.textContent = '❌ Email tidak valid';
+                emailError.style.color = '#ef4444';
+                emailError.style.display = 'block';
+            } else if (value.length > 0 && value.includes('@')) {
+                emailError.style.display = 'none';
+            } else {
+                emailError.style.display = 'none';
+            }
+        });
+        
+        passwordInput.addEventListener('input', function() {
+            const value = this.value;
+            if (value.length > 0 && value.length < 8) {
+                passwordError.textContent = '❌ Password minimal 8 karakter';
+                passwordError.style.color = '#ef4444';
+                passwordError.style.display = 'block';
+            } else if (value.length >= 8) {
+                passwordError.style.display = 'none';
+            } else {
+                passwordError.style.display = 'none';
+            }
+        });
+    </script>
     
     <script src="js/auth.js"></script>
 </body>

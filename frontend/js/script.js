@@ -1,6 +1,5 @@
-const API_URL = 'http://localhost:3000/api/items';
+const API_URL = '/api/items';
 let items = [];
-let searchKeyword = '';
 
 // DOM Elements
 const nameInput = document.getElementById('nameInput');
@@ -17,49 +16,59 @@ const dataTable = document.getElementById('dataTable');
 const totalItems = document.getElementById('totalItems');
 const totalStock = document.getElementById('totalStock');
 const totalValue = document.getElementById('totalValue');
-const searchInput = document.getElementById('searchInput');
 
-// Get token
 function getToken() {
     return localStorage.getItem('token');
 }
 
-// Fetch all data
+// ============================================
+// FETCH DATA
+// ============================================
 async function fetchItems() {
     try {
-        showLoading(true);
-        const url = searchKeyword ? `${API_URL}/search?keyword=${encodeURIComponent(searchKeyword)}` : API_URL;
-        const response = await fetch(url);
+        loading.style.display = 'block';
+        dataTable.style.display = 'none';
         
-        if (!response.ok) {
-            throw new Error('Failed to load data');
+        const token = getToken();
+        if (!token) {
+            alert('Token tidak ditemukan! Silakan login ulang.');
+            window.location.href = 'login.html';
+            return;
         }
         
-        items = await response.json();
+        const res = await fetch(API_URL, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (res.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            alert('Sesi habis! Silakan login ulang.');
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        if (!res.ok) throw new Error('Gagal memuat data');
+        
+        items = await res.json();
         renderTable();
         updateStats();
-        showLoading(false);
+        loading.style.display = 'none';
+        dataTable.style.display = 'table';
     } catch (error) {
         console.error('Error fetching:', error);
-        showAlert('Failed to load data!', 'error');
-        showLoading(false);
+        alert('Gagal memuat data: ' + error.message);
+        loading.style.display = 'none';
     }
 }
 
-// Search items
-function searchItems() {
-    searchKeyword = searchInput.value.trim();
-    fetchItems();
-}
-
-// Clear search
-function clearSearch() {
-    searchInput.value = '';
-    searchKeyword = '';
-    fetchItems();
-}
-
-// Update stats
+// ============================================
+// UPDATE STATS
+// ============================================
 function updateStats() {
     const total = items.length;
     const stock = items.reduce((sum, item) => sum + (item.stock || 0), 0);
@@ -70,12 +79,13 @@ function updateStats() {
     totalValue.textContent = `Rp ${value.toLocaleString('id-ID')}`;
 }
 
-// Render table
+// ============================================
+// RENDER TABLE
+// ============================================
 function renderTable() {
     if (items.length === 0) {
-        dataBody.innerHTML = `<tr><td colspan="6" class="empty">No items found</td></tr>`;
+        dataBody.innerHTML = `<tr><td colspan="6" class="empty">Belum ada data barang</td></tr>`;
         dataFoot.innerHTML = '';
-        dataTable.style.display = 'table';
         return;
     }
 
@@ -93,7 +103,6 @@ function renderTable() {
         </tr>
     `).join('');
 
-    // Footer
     const totalStockAll = items.reduce((sum, item) => sum + (item.stock || 0), 0);
     const totalValueAll = items.reduce((sum, item) => sum + ((item.stock || 0) * (item.price || 0)), 0);
 
@@ -106,53 +115,61 @@ function renderTable() {
             <td></td>
         </tr>
     `;
-
-    dataTable.style.display = 'table';
 }
 
-// Add item
+// ============================================
+// ADD ITEM
+// ============================================
 async function addItem() {
     const name = nameInput.value.trim();
     const stock = parseInt(stockInput.value) || 0;
     const price = parseInt(priceInput.value) || 0;
 
     if (!name) {
-        showAlert('Product name is required!', 'error');
+        alert('Nama barang wajib diisi!');
         nameInput.focus();
         return;
     }
 
     const token = getToken();
     if (!token) {
+        alert('Token tidak ditemukan! Silakan login ulang.');
         window.location.href = 'login.html';
         return;
     }
 
     try {
-        const response = await fetch(API_URL, {
+        const res = await fetch(API_URL, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ name, stock, price })
         });
 
-        if (response.ok) {
+        if (res.ok) {
             clearForm();
             await fetchItems();
-            showAlert('Item added successfully!', 'success');
+            alert('Data berhasil ditambahkan!');
+        } else if (res.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            alert('Sesi habis! Silakan login ulang.');
+            window.location.href = 'login.html';
         } else {
-            const error = await response.json();
-            showAlert(error.error || 'Failed to add item!', 'error');
+            const error = await res.json();
+            alert(error.error || 'Gagal menambah data!');
         }
     } catch (error) {
         console.error('Error adding:', error);
-        showAlert('An error occurred!', 'error');
+        alert('Terjadi kesalahan!');
     }
 }
 
-// Edit item
+// ============================================
+// EDIT ITEM
+// ============================================
 function editItem(id) {
     const item = items.find(i => i.id === id);
     if (!item) return;
@@ -163,11 +180,13 @@ function editItem(id) {
     editId.value = id;
     saveBtn.textContent = 'Update';
     cancelBtn.style.display = 'inline-block';
-    formTitle.textContent = 'Edit Item';
+    formTitle.textContent = 'Edit Barang';
     nameInput.focus();
 }
 
-// Update item
+// ============================================
+// UPDATE ITEM
+// ============================================
 async function updateItem() {
     const id = editId.value;
     const name = nameInput.value.trim();
@@ -175,109 +194,146 @@ async function updateItem() {
     const price = parseInt(priceInput.value) || 0;
 
     if (!name) {
-        showAlert('Product name is required!', 'error');
+        alert('Nama barang wajib diisi!');
         nameInput.focus();
         return;
     }
 
     const token = getToken();
     if (!token) {
+        alert('Token tidak ditemukan! Silakan login ulang.');
         window.location.href = 'login.html';
         return;
     }
 
     try {
-        const response = await fetch(`${API_URL}/${id}`, {
+        const res = await fetch(`${API_URL}/${id}`, {
             method: 'PUT',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ name, stock, price })
         });
 
-        if (response.ok) {
+        if (res.ok) {
             clearForm();
             await fetchItems();
-            showAlert('Item updated successfully!', 'success');
+            alert('Data berhasil diupdate!');
+        } else if (res.status === 403) {
+            alert('Anda tidak memiliki akses ke data ini!');
+        } else if (res.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            alert('Sesi habis! Silakan login ulang.');
+            window.location.href = 'login.html';
         } else {
-            const error = await response.json();
-            showAlert(error.error || 'Failed to update item!', 'error');
+            const error = await res.json();
+            alert(error.error || 'Gagal update data!');
         }
     } catch (error) {
         console.error('Error updating:', error);
-        showAlert('An error occurred!', 'error');
+        alert('Terjadi kesalahan!');
     }
 }
 
-// Delete item
+// ============================================
+// DELETE ITEM
+// ============================================
 async function deleteItem(id) {
-    if (!confirm('Are you sure you want to delete this item?')) return;
+    if (!confirm('Yakin ingin menghapus barang ini?')) return;
 
     const token = getToken();
     if (!token) {
+        alert('Token tidak ditemukan! Silakan login ulang.');
         window.location.href = 'login.html';
         return;
     }
 
     try {
-        const response = await fetch(`${API_URL}/${id}`, {
+        const res = await fetch(`${API_URL}/${id}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
 
-        if (response.ok) {
+        if (res.ok) {
             await fetchItems();
-            showAlert('Item deleted successfully!', 'success');
+            alert('Data berhasil dihapus!');
+        } else if (res.status === 403) {
+            alert('Anda tidak memiliki akses ke data ini!');
+        } else if (res.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            alert('Sesi habis! Silakan login ulang.');
+            window.location.href = 'login.html';
         } else {
-            const error = await response.json();
-            showAlert(error.error || 'Failed to delete item!', 'error');
+            const error = await res.json();
+            alert(error.error || 'Gagal menghapus data!');
         }
     } catch (error) {
         console.error('Error deleting:', error);
-        showAlert('An error occurred!', 'error');
+        alert('Terjadi kesalahan!');
     }
 }
 
-// Clear form
+// ============================================
+// CLEAR FORM
+// ============================================
 function clearForm() {
     nameInput.value = '';
     stockInput.value = '';
     priceInput.value = '';
     editId.value = '';
-    saveBtn.textContent = 'Save';
+    saveBtn.textContent = 'Simpan';
     cancelBtn.style.display = 'none';
-    formTitle.textContent = 'Add New Item';
+    formTitle.textContent = 'Tambah Barang';
 }
 
-// Cancel edit
 function cancelEdit() {
     clearForm();
 }
 
-// Show/hide loading
-function showLoading(show) {
-    loading.style.display = show ? 'block' : 'none';
-    dataTable.style.display = show ? 'none' : 'table';
-}
-
-// Show alert
-function showAlert(message, type = 'success') {
-    const alertEl = document.getElementById('alertMessage');
-    if (alertEl) {
-        alertEl.textContent = message;
-        alertEl.className = `alert ${type}`;
-        alertEl.style.display = 'block';
-        
-        setTimeout(() => {
-            alertEl.style.display = 'none';
-        }, 5000);
+// ============================================
+// SEARCH
+// ============================================
+function searchItems() {
+    const keyword = document.getElementById('searchInput').value.trim();
+    if (!keyword) {
+        fetchItems();
+        return;
     }
+    
+    const token = getToken();
+    if (!token) {
+        alert('Token tidak ditemukan! Silakan login ulang.');
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    fetch(`${API_URL}/search?keyword=${encodeURIComponent(keyword)}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+        .then(res => res.json())
+        .then(data => {
+            items = data;
+            renderTable();
+            updateStats();
+        })
+        .catch(err => console.error('Search error:', err));
 }
 
-// Event listeners
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    fetchItems();
+}
+
+// ============================================
+// EVENT LISTENERS
+// ============================================
 saveBtn.addEventListener('click', () => {
     if (editId.value) {
         updateItem();
@@ -288,45 +344,27 @@ saveBtn.addEventListener('click', () => {
 
 cancelBtn.addEventListener('click', cancelEdit);
 
-// Enter key support
-searchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        searchItems();
-    }
-});
-
 nameInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        stockInput.focus();
-    }
+    if (e.key === 'Enter') stockInput.focus();
 });
 
 stockInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        priceInput.focus();
-    }
+    if (e.key === 'Enter') priceInput.focus();
 });
 
 priceInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        saveBtn.click();
-    }
+    if (e.key === 'Enter') saveBtn.click();
 });
 
-// Load data
+// ============================================
+// LOAD DATA
+// ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Check authentication
-    if (!localStorage.getItem('token')) {
+    const token = getToken();
+    if (!token) {
+        alert('Token tidak ditemukan! Silakan login ulang.');
         window.location.href = 'login.html';
         return;
     }
-    
-    // Set user info
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.name) {
-        document.getElementById('userName').textContent = user.name;
-        document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
-    }
-    
     fetchItems();
 });

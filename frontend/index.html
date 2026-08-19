@@ -3,91 +3,143 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Inventory Management</title>
+    <title>Dashboard - Inventory Management</title>
     <link rel="stylesheet" href="css/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 </head>
 <body>
-    <!-- Navbar -->
+    <!-- ============================================ -->
+    <!-- NAVBAR -->
+    <!-- ============================================ -->
     <nav class="navbar">
         <div class="navbar-inner">
             <a href="index.html" class="navbar-brand">
-                Inventory Management
+                <span class="brand-dot"></span>
+                Inventory
                 <span>v1.0</span>
             </a>
             <div class="navbar-menu">
-                <div class="user-info">
+                <div class="user-info" onclick="showProfile()">
                     <div class="avatar" id="userAvatar">U</div>
                     <span class="user-name" id="userName">User</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
                 </div>
-                <button class="btn-logout" onclick="logout()">Sign Out</button>
+                <button class="btn-logout" onclick="logout()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Logout
+                </button>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <div class="main-content">
+    <!-- ============================================ -->
+    <!-- PROFILE DROPDOWN -->
+    <!-- ============================================ -->
+    <div class="profile-dropdown" id="profileDropdown" style="display:none;">
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="profile-avatar" id="profileAvatar">U</div>
+                <div class="profile-name" id="profileName">User</div>
+                <div class="profile-email" id="profileEmail">user@email.com</div>
+            </div>
+            <hr />
+            <button class="profile-logout" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ============================================ -->
+    <main class="main-content">
         <div class="container">
+
             <!-- Alert -->
             <div id="alertMessage" class="alert"></div>
 
-            <!-- Stats -->
+            <!-- ========================================== -->
+            <!-- PAGE HEADER -->
+            <!-- ========================================== -->
+            <div class="page-header">
+                <h1>Dashboard</h1>
+                <p>Kelola stok barang dengan mudah dan efisien</p>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- STATS CARDS -->
+            <!-- ========================================== -->
             <div class="stats">
                 <div class="stat-card">
+                    <div class="stat-icon">📦</div>
                     <div class="stat-label">Total Items</div>
                     <div class="stat-value blue" id="totalItems">0</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-icon">📊</div>
                     <div class="stat-label">Total Stock</div>
                     <div class="stat-value" id="totalStock">0</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-icon">💰</div>
                     <div class="stat-label">Total Value</div>
                     <div class="stat-value green" id="totalValue">Rp 0</div>
                 </div>
             </div>
 
-            <!-- Search & Actions -->
+            <!-- ========================================== -->
+            <!-- SEARCH & ACTIONS -->
+            <!-- ========================================== -->
             <div class="actions-bar">
                 <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Search products..." />
-                    <button onclick="searchItems()">Search</button>
+                    <input type="text" id="searchInput" placeholder="Cari produk..." />
+                    <button onclick="searchItems()">Cari</button>
                 </div>
-                <button class="btn-secondary" onclick="clearSearch()">Clear</button>
+                <button class="btn-secondary" onclick="clearSearch()">Reset</button>
             </div>
 
-            <!-- Form -->
+            <!-- ========================================== -->
+            <!-- FORM -->
+            <!-- ========================================== -->
             <div class="form-section">
-                <h2 id="formTitle">Add New Item</h2>
+                <h2 id="formTitle">Tambah Barang</h2>
                 <div class="form-group-row">
-                    <input type="text" id="nameInput" placeholder="Product name..." />
-                    <input type="number" id="stockInput" placeholder="Stock quantity..." />
-                    <input type="number" id="priceInput" placeholder="Price..." />
+                    <input type="text" id="nameInput" placeholder="Nama barang..." />
+                    <input type="number" id="stockInput" placeholder="Jumlah stok..." />
+                    <input type="number" id="priceInput" placeholder="Harga satuan..." />
                     <input type="hidden" id="editId" />
-                    <button class="btn-primary" id="saveBtn">Save</button>
-                    <button class="btn-secondary" id="cancelBtn" style="display:none;">Cancel</button>
+                    <button class="btn-primary" id="saveBtn">Simpan</button>
+                    <button class="btn-secondary" id="cancelBtn" style="display:none;">Batal</button>
                 </div>
             </div>
 
-            <!-- Table -->
+            <!-- ========================================== -->
+            <!-- TABLE -->
+            <!-- ========================================== -->
             <div class="table-wrapper">
-                <div id="loading" class="loading">Loading data...</div>
+                <div id="loading" class="loading">Memuat data...</div>
                 <table id="dataTable" style="display:none;">
                     <thead>
                         <tr>
                             <th>No</th>
-                            <th>Product Name</th>
-                            <th>Stock</th>
-                            <th>Price</th>
+                            <th>Nama Barang</th>
+                            <th>Stok</th>
+                            <th>Harga</th>
                             <th>Subtotal</th>
-                            <th>Actions</th>
+                            <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="dataBody"></tbody>
                     <tfoot id="dataFoot"></tfoot>
                 </table>
             </div>
+
         </div>
-    </div>
+    </main>
 
     <script src="js/auth.js"></script>
     <script src="js/script.js"></script>
